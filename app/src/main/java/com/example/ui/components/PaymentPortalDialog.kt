@@ -52,6 +52,8 @@ fun PaymentPortalDialog(
 
   // Processing state
   var isProcessing by remember { mutableStateOf(false) }
+  var isPayPalRedirecting by remember { mutableStateOf(false) }
+  var payPalEmail by remember { mutableStateOf("") }
   var completedReceipt by remember { mutableStateOf<PaymentReceipt?>(null) }
 
   val isVipEmail = remember(membership.userEmail, membership.isLifetimeVip) {
@@ -144,6 +146,29 @@ fun PaymentPortalDialog(
               onDismiss()
             }
           )
+        } else if (isPayPalRedirecting) {
+          // Simulated PayPal Redirection & Authorization
+          PayPalHandshakeView(
+            amount = totalDueAmount,
+            email = membership.userEmail,
+            onAuthorized = { email ->
+              payPalEmail = email
+              isPayPalRedirecting = false
+              isProcessing = true
+              scope.launch {
+                delay(1500)
+                val receipt = SampleDataRepository.processPayment(
+                  method = PaymentMethodType.PAYPAL,
+                  amount = totalDueAmount,
+                  plan = selectedPlan,
+                  with18PlusUpgrade = include18PlusUpgrade
+                )
+                isProcessing = false
+                completedReceipt = receipt
+              }
+            },
+            onCancel = { isPayPalRedirecting = false }
+          )
         } else if (isProcessing) {
           // Processing Animation
           Box(
@@ -167,7 +192,7 @@ fun PaymentPortalDialog(
               )
               Spacer(modifier = Modifier.height(6.dp))
               Text(
-                text = "Tokenizing payment gateway & activating Club Desire privileges",
+                text = "Tokenizing payment gateway & activating REBEL UP privileges",
                 fontSize = 12.sp,
                 color = TextSecondary
               )
@@ -492,17 +517,21 @@ fun PaymentPortalDialog(
           // Authorize Button
           Button(
             onClick = {
-              isProcessing = true
-              scope.launch {
-                delay(1200)
-                val receipt = SampleDataRepository.processPayment(
-                  method = selectedPaymentMethod,
-                  amount = totalDueAmount,
-                  plan = selectedPlan,
-                  with18PlusUpgrade = include18PlusUpgrade
-                )
-                isProcessing = false
-                completedReceipt = receipt
+              if (selectedPaymentMethod == PaymentMethodType.PAYPAL) {
+                isPayPalRedirecting = true
+              } else {
+                isProcessing = true
+                scope.launch {
+                  delay(1200)
+                  val receipt = SampleDataRepository.processPayment(
+                    method = selectedPaymentMethod,
+                    amount = totalDueAmount,
+                    plan = selectedPlan,
+                    with18PlusUpgrade = include18PlusUpgrade
+                  )
+                  isProcessing = false
+                  completedReceipt = receipt
+                }
               }
             },
             modifier = Modifier
@@ -616,7 +645,117 @@ fun PaymentReceiptView(
       colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
       shape = RoundedCornerShape(14.dp)
     ) {
-      Text("CONTINUE TO CLUB DESIRE", fontWeight = FontWeight.Bold, color = DesireBlack, letterSpacing = 1.sp)
+      Text("CONTINUE TO REBEL UP", fontWeight = FontWeight.Bold, color = DesireBlack, letterSpacing = 1.sp)
+    }
+  }
+}
+
+@Composable
+fun PayPalHandshakeView(
+  amount: String,
+  email: String,
+  onAuthorized: (String) -> Unit,
+  onCancel: () -> Unit
+) {
+  var step by remember { mutableStateOf(1) }
+  var userEmail by remember { mutableStateOf(email) }
+  var password by remember { mutableStateOf("••••••••") }
+
+  LaunchedEffect(Unit) {
+    delay(800)
+    step = 2 // Move from "Redirecting" to "Login"
+  }
+
+  Column(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(8.dp),
+    horizontalAlignment = Alignment.CenterHorizontally
+  ) {
+    if (step == 1) {
+      Box(modifier = Modifier.height(300.dp), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+          CircularProgressIndicator(color = Color(0xFF0079C1), modifier = Modifier.size(48.dp))
+          Spacer(modifier = Modifier.height(16.dp))
+          Text("Redirecting to PayPal...", fontWeight = FontWeight.Bold, color = TextPrimary)
+          Text("Securing your connection...", fontSize = 12.sp, color = TextSecondary)
+        }
+      }
+    } else {
+      // PayPal Login Lookalike
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(16.dp))
+          .background(Color.White)
+          .padding(24.dp)
+      ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+          // PayPal Logo Simulation
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Pay", fontWeight = FontWeight.Bold, color = Color(0xFF003087), fontSize = 24.sp)
+            Text("Pal", fontWeight = FontWeight.Bold, color = Color(0xFF009CDE), fontSize = 24.sp)
+          }
+
+          Spacer(modifier = Modifier.height(24.dp))
+
+          Text(
+            text = "Pay $amount with PayPal",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF2C2E2F)
+          )
+
+          Spacer(modifier = Modifier.height(20.dp))
+
+          OutlinedTextField(
+            value = userEmail,
+            onValueChange = { userEmail = it },
+            label = { Text("Email or mobile number") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+              focusedBorderColor = Color(0xFF0070BA),
+              unfocusedBorderColor = Color(0xFFD1D5D7),
+              focusedTextColor = Color.Black,
+              unfocusedTextColor = Color.Black
+            )
+          )
+
+          Spacer(modifier = Modifier.height(12.dp))
+
+          OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+              focusedBorderColor = Color(0xFF0070BA),
+              unfocusedBorderColor = Color(0xFFD1D5D7),
+              focusedTextColor = Color.Black,
+              unfocusedTextColor = Color.Black
+            )
+          )
+
+          Spacer(modifier = Modifier.height(24.dp))
+
+          Button(
+            onClick = { onAuthorized(userEmail) },
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0070BA)),
+            shape = RoundedCornerShape(24.dp)
+          ) {
+            Text("Log In", fontWeight = FontWeight.Bold, color = Color.White)
+          }
+
+          Spacer(modifier = Modifier.height(12.dp))
+
+          TextButton(onClick = onCancel) {
+            Text("Cancel and return to REBEL UP", color = Color(0xFF0070BA), fontSize = 13.sp)
+          }
+        }
+      }
     }
   }
 }

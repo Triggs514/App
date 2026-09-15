@@ -3,6 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/ic_app_icon_fg"
+        android:drawable="@drawable/club_desire_gothic_logo_1789466196465"
         android:gravity="center" />
 </layer-list>

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Club Desire"
+rootProject.name = "REBEL UP"
 
 include(":app")

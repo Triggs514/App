@@ -66,7 +66,7 @@ fun AppTopBar(
 
       Column {
         Text(
-          text = "CLUB DESIRE",
+          text = "REBEL UP",
           fontSize = 15.sp,
           fontWeight = FontWeight.Black,
           letterSpacing = 1.5.sp,

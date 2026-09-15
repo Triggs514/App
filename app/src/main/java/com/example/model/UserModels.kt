@@ -53,8 +53,17 @@ enum class DynamicKink(
   val isGroupActivity: Boolean = false
 ) {
   THREESOME_MFF("Threesome (MFF)", 0xFFFF2A85, isGroupActivity = true),
+  THREESOME_FFF("Threesome (FFF)", 0xFFFF2A85, isGroupActivity = true),
+  THREESOME_MMM("Threesome (MMM)", 0xFF9D4EDD, isGroupActivity = true),
   THREESOME_MMF("Threesome (MMF)", 0xFF9D4EDD, isGroupActivity = true),
-  FOURSOME("Foursomes & Couples Swap", 0xFF00F0FF, isGroupActivity = true),
+  FOURSOME_MFFM("Foursome (MFFM)", 0xFF00F0FF, isGroupActivity = true),
+  FOURSOME_MMFF("Foursome (MMFF)", 0xFF00F0FF, isGroupActivity = true),
+  FOURSOME_MMMF("Foursome (MMMF)", 0xFF00F0FF, isGroupActivity = true),
+  FOURSOME_FFFM("Foursome (FFFM)", 0xFF00F0FF, isGroupActivity = true),
+  FOURSOME_MMMM("Foursome (MMMM)", 0xFF00F0FF, isGroupActivity = true),
+  FOURSOME_FFFF("Foursome (FFFF)", 0xFF00F0FF, isGroupActivity = true),
+  GROUP_SWAP("Couples Swap", 0xFF00F0FF, isGroupActivity = true),
+  LGBTQ_COMMUNITY("LGBTQ+ Friendly Community", 0xFF9D4EDD, isGroupActivity = false),
   SPIT_ROASTING("Spit Roasting", 0xFFFF5400, isGroupActivity = true),
   ORGIES("Orgies & Play Parties", 0xFFFF0054, isGroupActivity = true),
   GANG_BANGING("Gang Banging", 0xFF7209B7, isGroupActivity = true),
@@ -154,6 +163,7 @@ data class UserProfile(
   val distanceMiles: Int,
   @DrawableRes val mainPhotoRes: Int? = null,
   val photos: List<PhotoItem> = emptyList(),
+  val lifestylePhotos: List<PhotoItem> = emptyList(),
   val gradientColors: Pair<Long, Long>,
   val desireTags: List<DynamicKink>,
   val preferredGroupActivities: List<DynamicKink> = emptyList(),
@@ -165,7 +175,8 @@ data class UserProfile(
   val verified: Boolean = true,
   val has18PlusVault: Boolean = true,
   val vaultItems: List<VaultMediaItem> = emptyList(),
-  val isLifetimeVip: Boolean = false
+  val isLifetimeVip: Boolean = false,
+  val membershipPlan: PlanType = PlanType.FREE
 )
 
 data class GroupEvent(
@@ -283,7 +294,7 @@ data class MatchPreferences(
   val onlyRealVerifiedMembers: Boolean = true, // Filter out fake profiles & bots
   val maxDistanceMiles: Int = 60,
   val minAge: Int = 18,
-  val maxAge: Int = 40, // Strict 18 to 40 age limits
+  val maxAge: Int = 65, // Expanded 18 to 65 age limits
   val onlyWithVault18Plus: Boolean = false
 )
 
@@ -302,7 +313,41 @@ data class ChatMessage(
   val text: String,
   val time: String,
   val isFromMe: Boolean,
-  val attachedSexRequest: DirectSexRequest? = null
+  val attachedSexRequest: DirectSexRequest? = null,
+  val isEncrypted: Boolean = true,
+  val isSelfDestruct: Boolean = false
+)
+
+// --- LIVE STREAMING MODELS ---
+data class VirtualGift(
+  val id: String,
+  val name: String,
+  val icon: String,
+  val tokenValue: Int,
+  val description: String
+)
+
+data class StreamMessage(
+  val id: String,
+  val senderName: String,
+  val text: String,
+  val isTip: Boolean = false,
+  val tipAmount: String = "",
+  val gift: VirtualGift? = null
+)
+
+data class LiveStream(
+  val id: String,
+  val broadcasterName: String,
+  val broadcasterType: UserType,
+  val title: String,
+  val viewerCount: Int,
+  val priceToJoin: String,
+  val isPrivate: Boolean = false,
+  val category: String,
+  @DrawableRes val previewRes: Int? = null,
+  val gradientColors: Pair<Long, Long>,
+  val messages: List<StreamMessage> = emptyList()
 )
 
 data class ChatConversation(
@@ -314,7 +359,8 @@ data class ChatConversation(
   val lastMessage: String,
   val lastMessageTime: String,
   val unreadCount: Int = 0,
-  val messages: List<ChatMessage> = emptyList()
+  val messages: List<ChatMessage> = emptyList(),
+  val isSecureChannel: Boolean = true
 )
 
 // --- PAYMENT PORTAL MODELS ---

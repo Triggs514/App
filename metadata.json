@@ -1,6 +1,6 @@
 {
-  "name": "Club Desire",
-  "description": "Alternative and polyamorous dating app for couples and singles exploring threesomes, group dynamics, goth/emo aesthetics, intimate requests, and membership tiers.",
+  "name": "REBEL UP",
+  "description": "REBEL UP - Live alternative and polyamorous lifestyle platform. Join live streams, send tips, and connect with premium creators, couples, and singles.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

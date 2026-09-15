@@ -2,7 +2,7 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Club Desire Noir & Neon Theme Colors
+// REBEL UP Noir & Neon Theme Colors
 val DesireBlack = Color(0xFF0C0714)
 val DesireDarkSurface = Color(0xFF140D22)
 val DesireCardSurface = Color(0xFF1E1430)

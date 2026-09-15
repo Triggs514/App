@@ -27,7 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.SampleDataRepository
+import com.example.util.SubscriptionManager
+import com.example.util.PremiumFeature
 import com.example.model.*
+import com.example.ui.components.MembershipBadge
 import com.example.ui.theme.*
 
 @Composable
@@ -94,23 +97,14 @@ fun MyProfileScreen(
         Column {
           Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-              text = "COMPREHENSIVE PROFILE SYSTEM",
+              text = "REBEL UP PROFILE SYSTEM",
               fontSize = 11.sp,
               fontWeight = FontWeight.Bold,
               letterSpacing = 1.sp,
               color = NeonMagenta
             )
-            if (membership.isLifetimeVip) {
-              Spacer(modifier = Modifier.width(6.dp))
-              Box(
-                modifier = Modifier
-                  .clip(RoundedCornerShape(4.dp))
-                  .background(GoldVip)
-                  .padding(horizontal = 4.dp, vertical = 1.dp)
-              ) {
-                Text("LIFETIME VIP", fontSize = 9.sp, fontWeight = FontWeight.Black, color = DesireBlack)
-              }
-            }
+            Spacer(modifier = Modifier.width(8.dp))
+            MembershipBadge(plan = membership.plan)
           }
           Text(
             text = "My Dating Persona",
@@ -118,10 +112,50 @@ fun MyProfileScreen(
             fontWeight = FontWeight.Bold,
             color = TextPrimary
           )
+          Text(
+            text = membership.userEmail,
+            fontSize = 11.sp,
+            color = TextMuted
+          )
+
+          if (!idState.isVerified) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+              modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(GoldVip.copy(alpha = 0.15f))
+                .border(1.dp, GoldVip.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                .clickable { onOpenAiGuardian() }
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = GoldVip, modifier = Modifier.size(12.dp))
+              Spacer(modifier = Modifier.width(4.dp))
+              Text("Get AI Verified", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = GoldVip)
+            }
+          } else {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(Icons.Default.Verified, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(12.dp))
+              Spacer(modifier = Modifier.width(4.dp))
+              Text("Account Verified", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+            }
+          }
         }
 
-        IconButton(
-          onClick = {
+        Row {
+          IconButton(
+            onClick = { SampleDataRepository.signOut() }
+          ) {
+            Icon(
+              imageVector = Icons.Default.Logout,
+              contentDescription = "Logout",
+              tint = TextMuted
+            )
+          }
+
+          IconButton(
+            onClick = {
             if (isEditing) {
               SampleDataRepository.updateMyProfile(
                 name = name,
@@ -161,6 +195,7 @@ fun MyProfileScreen(
         }
       }
     }
+  }
 
     if (showSaveToast) {
       Box(
@@ -331,8 +366,8 @@ fun MyProfileScreen(
 
           Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             MembershipPerkRow("Standard Membership", if (membership.isLifetimeVip) "$0 Lifetime Free" else "${membership.plan.priceText} ${membership.plan.billingPeriod}")
-            MembershipPerkRow("Direct Sex Requests", if (membership.canSendSexRequests) "Unlocked (VIP 18+ Active)" else "Locked ($15 Upgrade Needed)")
-            MembershipPerkRow("18+ Private Vault Access", if (membership.canView18PlusContent) "Unlocked (Full HD)" else "Locked ($15 Upgrade Needed)")
+            MembershipPerkRow("Direct Sex Requests", if (SubscriptionManager.canSendSexRequests()) "Unlocked (VIP 18+ Active)" else "Locked ($15 Upgrade Needed)")
+            MembershipPerkRow("18+ Private Vault Access", if (SubscriptionManager.canView18PlusContent()) "Unlocked (Full HD)" else "Locked ($15 Upgrade Needed)")
           }
 
           Spacer(modifier = Modifier.height(12.dp))
@@ -1040,8 +1075,16 @@ fun MyProfileScreen(
 
       val groupDynamicsList = listOf(
         DynamicKink.THREESOME_MFF,
+        DynamicKink.THREESOME_FFF,
+        DynamicKink.THREESOME_MMM,
         DynamicKink.THREESOME_MMF,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
+        DynamicKink.FOURSOME_MMFF,
+        DynamicKink.FOURSOME_MMMF,
+        DynamicKink.FOURSOME_FFFM,
+        DynamicKink.FOURSOME_MMMM,
+        DynamicKink.FOURSOME_FFFF,
+        DynamicKink.GROUP_SWAP,
         DynamicKink.SPIT_ROASTING,
         DynamicKink.ORGIES,
         DynamicKink.GANG_BANGING

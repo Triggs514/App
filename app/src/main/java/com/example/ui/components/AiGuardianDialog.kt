@@ -12,7 +12,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -206,7 +216,7 @@ fun AiGuardianDialog(
                   Spacer(modifier = Modifier.height(4.dp))
 
                   Text(
-                    text = "Sentinel AI actively quarantines commercial spam bots, fake GPS relocators, crypto/cash solicitations, and catfish profile cloning across Club Desire.",
+                    text = "Sentinel AI actively quarantines commercial spam bots, fake GPS relocators, crypto/cash solicitations, and catfish profile cloning across REBEL UP.",
                     fontSize = 12.sp,
                     color = TextSecondary
                   )
@@ -396,20 +406,32 @@ fun AiGuardianDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // Selfie Scan Preview Simulation
+                var hasTakenSelfie by remember { mutableStateOf(false) }
+
                 Box(
                   modifier = Modifier
                     .fillMaxWidth()
-                    .height(130.dp)
+                    .height(160.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFF160D24))
-                    .border(1.dp, VelvetPurple, RoundedCornerShape(12.dp)),
+                    .border(1.dp, if (hasTakenSelfie) SuccessGreen else VelvetPurple, RoundedCornerShape(12.dp))
+                    .clickable { hasTakenSelfie = true },
                   contentAlignment = Alignment.Center
                 ) {
-                  Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Face, contentDescription = null, tint = NeonMagenta, modifier = Modifier.size(36.dp))
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text("AI 3D Mesh & Liveness Scanner", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text("Confirms photo matches government document securely", fontSize = 10.sp, color = TextSecondary)
+                  if (hasTakenSelfie) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                      Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(48.dp))
+                      Spacer(modifier = Modifier.height(8.dp))
+                      Text("Selfie Captured Successfully", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+                      Text("Click to retake", fontSize = 10.sp, color = TextSecondary)
+                    }
+                  } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                      Icon(Icons.Default.Face, contentDescription = null, tint = NeonMagenta, modifier = Modifier.size(36.dp))
+                      Spacer(modifier = Modifier.height(6.dp))
+                      Text("Tap to Take Verification Selfie", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                      Text("Confirms photo matches government document securely", fontSize = 10.sp, color = TextSecondary)
+                    }
                   }
                 }
 
@@ -417,18 +439,23 @@ fun AiGuardianDialog(
 
                 Button(
                   onClick = {
-                    isVerifyingId = true
-                    scope.launch {
-                      delay(1500)
-                      SampleDataRepository.submitIdVerification(selectedIdType)
-                      isVerifyingId = false
-                      idVerificationSuccess = true
+                    if (!hasTakenSelfie) {
+                      // Prompt to take selfie first
+                      hasTakenSelfie = true // Auto-trigger for demo
+                    } else {
+                      isVerifyingId = true
+                      scope.launch {
+                        delay(2000)
+                        SampleDataRepository.submitIdVerification(selectedIdType)
+                        isVerifyingId = false
+                        idVerificationSuccess = true
+                      }
                     }
                   },
                   modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                  colors = ButtonDefaults.buttonColors(containerColor = GoldVip),
+                  colors = ButtonDefaults.buttonColors(containerColor = if (hasTakenSelfie) GoldVip else NeonMagenta.copy(alpha = 0.7f)),
                   shape = RoundedCornerShape(12.dp)
                 ) {
                   if (isVerifyingId) {
@@ -436,9 +463,14 @@ fun AiGuardianDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Verifying Identity with AI...", color = DesireBlack, fontWeight = FontWeight.Bold)
                   } else {
-                    Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = DesireBlack)
+                    Icon(if (hasTakenSelfie) Icons.Default.VerifiedUser else Icons.Default.CameraAlt, contentDescription = null, tint = DesireBlack)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("SUBMIT FOR INSTANT AI VERIFICATION", color = DesireBlack, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                    Text(
+                      if (hasTakenSelfie) "SUBMIT FOR INSTANT AI VERIFICATION" else "TAKE SELFIE TO PROCEED", 
+                      color = DesireBlack, 
+                      fontWeight = FontWeight.Black, 
+                      fontSize = 12.sp
+                    )
                   }
                 }
               }

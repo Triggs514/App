@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.SampleDataRepository
+import com.example.util.SubscriptionManager
+import com.example.util.PremiumFeature
 import com.example.model.*
 import com.example.ui.theme.*
 import java.util.UUID
@@ -130,7 +132,7 @@ fun DirectRequestComposerDialog(
         Spacer(modifier = Modifier.height(14.dp))
 
         // Check if user has the $15 Premium 18+ upgrade!
-        if (!membership.canSendSexRequests) {
+        if (!SubscriptionManager.canSendSexRequests()) {
           // Locked State Banner
           Box(
             modifier = Modifier
@@ -160,7 +162,7 @@ fun DirectRequestComposerDialog(
               )
               Spacer(modifier = Modifier.height(6.dp))
               Text(
-                text = "Sending Direct Sex Requests and propositions requires the $15 Premium 18+ Upgrade.",
+                text = SubscriptionManager.getRestrictionReason(PremiumFeature.SEX_REQUESTS),
                 fontSize = 13.sp,
                 color = TextSecondary,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -353,7 +355,7 @@ fun DirectRequestComposerDialog(
         // Send Button
         Button(
           onClick = {
-            if (!membership.canSendSexRequests) {
+            if (!SubscriptionManager.canSendSexRequests()) {
               onOpenUpgrade()
             } else {
               val newReq = DirectSexRequest(
@@ -395,7 +397,7 @@ fun DirectRequestComposerDialog(
               Icon(Icons.Default.Send, contentDescription = null, tint = DesireBlack)
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                text = if (membership.canSendSexRequests) "TRANSMIT PROPOSITION" else "UNLOCK 18+ TO SEND ($15)",
+                text = if (SubscriptionManager.canSendSexRequests()) "TRANSMIT PROPOSITION" else "UNLOCK 18+ TO SEND ($15)",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = DesireBlack,

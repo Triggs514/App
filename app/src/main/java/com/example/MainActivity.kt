@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -42,17 +43,25 @@ enum class NavigationTab(val label: String, val icon: ImageVector) {
   SERVICES("Ads / Pros", Icons.Default.Diamond),
   PREMIUM_18_PLUS("18+ Hub", Icons.Default.VpnKey),
   AI_STUDIO("AI Studio", Icons.Default.AutoFixHigh),
-  PARTIES("Parties", Icons.Default.Groups),
+  LIVE("Live Now", Icons.Default.Stream),
   CHATS("Chats", Icons.Default.ChatBubble),
   PROFILE("Profile", Icons.Default.Person)
 }
 
 @Composable
 fun ClubDesireApp() {
+  val firebaseUser by SampleDataRepository.firebaseUser.collectAsState()
+  var isAgeVerified by rememberSaveable { mutableStateOf(false) }
+
+  if (!isAgeVerified || firebaseUser == null) {
+    AgeVerificationScreen(onVerified = { isAgeVerified = true })
+    return
+  }
+
   val membership by SampleDataRepository.membershipState.collectAsState()
   val profiles by SampleDataRepository.profiles.collectAsState()
 
-  var currentTab by remember { mutableStateOf(NavigationTab.DISCOVER) }
+  var currentTab by remember { mutableStateOf(NavigationTab.LIVE) }
   var showUpgradeDialog by remember { mutableStateOf(false) }
   var showPaymentPortalDialog by remember { mutableStateOf(false) }
   var showAiGuardianDialog by remember { mutableStateOf(false) }
@@ -194,8 +203,8 @@ fun ClubDesireApp() {
           )
         }
 
-        NavigationTab.PARTIES -> {
-          EventsAndPartiesScreen(
+        NavigationTab.LIVE -> {
+          LiveStreamingScreen(
             membership = membership,
             onOpenUpgrade = { showUpgradeDialog = true }
           )

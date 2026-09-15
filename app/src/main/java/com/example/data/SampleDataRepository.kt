@@ -6,9 +6,46 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import java.util.UUID
 
 object SampleDataRepository {
+
+  private val auth: FirebaseAuth? by lazy {
+    try {
+      FirebaseAuth.getInstance()
+    } catch (e: Exception) {
+      null
+    }
+  }
+
+  private val _firebaseUser = MutableStateFlow<FirebaseUser?>(null)
+  val firebaseUser: StateFlow<FirebaseUser?> = _firebaseUser.asStateFlow()
+
+  init {
+    try {
+      auth?.let { authInstance ->
+        _firebaseUser.value = authInstance.currentUser
+        authInstance.addAuthStateListener {
+          _firebaseUser.value = it.currentUser
+          // Sync membership state with firebase user if needed
+          if (it.currentUser != null) {
+            _membershipState.update { state ->
+              state.copy(userEmail = it.currentUser?.email ?: state.userEmail)
+            }
+          }
+        }
+      }
+    } catch (e: Exception) {
+      // Firebase might not be initialized yet, this is okay as it will be handled
+      // when the auth listener is added or when it's accessed later.
+    }
+  }
 
   private val _membershipState = MutableStateFlow(
     MembershipState(
@@ -52,11 +89,16 @@ object SampleDataRepository {
         PhotoItem(id = "p_2", caption = "Alt Club Night", isMain = false, drawableRes = R.drawable.goth_profile_hero),
         PhotoItem(id = "p_3", caption = "VIP Playroom Lounge", isMain = false, drawableRes = R.drawable.vip_vault_banner)
       ),
+      lifestylePhotos = listOf(
+        PhotoItem("lp_me_1", "Our downtown balcony view", false, R.drawable.couple_profile_hero),
+        PhotoItem("lp_me_2", "Goth aesthetic prep", false, R.drawable.goth_profile_hero),
+        PhotoItem("lp_me_3", "VIP night out in the city", false, R.drawable.vip_vault_banner)
+      ),
       gradientColors = Pair(0xFFFF2A85, 0xFF9D4EDD),
       desireTags = listOf(
         DynamicKink.THREESOME_MFF,
         DynamicKink.THREESOME_MMF,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.SPIT_ROASTING,
         DynamicKink.CREAMPIE,
         DynamicKink.BREEDING,
@@ -67,7 +109,7 @@ object SampleDataRepository {
       ),
       preferredGroupActivities = listOf(
         DynamicKink.THREESOME_MFF,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.SPIT_ROASTING,
         DynamicKink.CREAMPIE,
         DynamicKink.BREEDING,
@@ -98,7 +140,7 @@ object SampleDataRepository {
       targetDynamics = setOf(
         DynamicKink.THREESOME_MFF,
         DynamicKink.SPIT_ROASTING,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.ORGIES,
         DynamicKink.GANG_BANGING,
         DynamicKink.GOTH_EMO,
@@ -135,13 +177,18 @@ object SampleDataRepository {
         PhotoItem("p1_1", "Our downtown penthouse suite", true, R.drawable.couple_profile_hero),
         PhotoItem("p1_2", "Private VIP lounge evening", false, R.drawable.vip_vault_banner)
       ),
+      lifestylePhotos = listOf(
+        PhotoItem("lp1_1", "Our private loft balcony", false, R.drawable.couple_profile_hero),
+        PhotoItem("lp1_2", "Weekend getaway", false, R.drawable.vip_vault_banner),
+        PhotoItem("lp1_3", "Candlelit dinner", false, R.drawable.goth_profile_hero)
+      ),
       gradientColors = Pair(0xFFFF2A85, 0xFF7B2CBF),
       desireTags = listOf(
         DynamicKink.THREESOME_MFF,
         DynamicKink.SPIT_ROASTING,
         DynamicKink.CREAMPIE,
         DynamicKink.BREEDING,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.ORGIES,
         DynamicKink.OPEN_POLY
       ),
@@ -163,6 +210,7 @@ object SampleDataRepository {
       subcultureTags = listOf(SubcultureType.SENSUAL_SWINGER, SubcultureType.ALTERNATIVE),
       verified = true,
       has18PlusVault = true,
+      membershipPlan = PlanType.YEARLY,
       vaultItems = listOf(
         VaultMediaItem(
           id = "vault_1_1",
@@ -201,6 +249,10 @@ object SampleDataRepository {
         PhotoItem("p2_1", "Goth look & corset aesthetic", true, R.drawable.goth_profile_hero),
         PhotoItem("p2_2", "Dungeon photoshoot", false, R.drawable.vip_vault_banner)
       ),
+      lifestylePhotos = listOf(
+        PhotoItem("lp2_1", "Vinyl collection vibes", false, R.drawable.goth_profile_hero),
+        PhotoItem("lp2_2", "Night out at the alt bar", false, R.drawable.vip_vault_banner)
+      ),
       gradientColors = Pair(0xFF7209B7, 0xFF4361EE),
       desireTags = listOf(
         DynamicKink.GOTH_EMO,
@@ -228,6 +280,7 @@ object SampleDataRepository {
       subcultureTags = listOf(SubcultureType.GOTH, SubcultureType.EMO, SubcultureType.ALTERNATIVE),
       verified = true,
       has18PlusVault = true,
+      membershipPlan = PlanType.LIFETIME_VIP,
       vaultItems = listOf(
         VaultMediaItem(
           id = "vault_2_1",
@@ -259,14 +312,14 @@ object SampleDataRepository {
       desireTags = listOf(
         DynamicKink.THREESOME_MMF,
         DynamicKink.THREESOME_MFF,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.SPIT_ROASTING,
         DynamicKink.ORGIES,
         DynamicKink.OPEN_POLY
       ),
       preferredGroupActivities = listOf(
         DynamicKink.THREESOME_MMF,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.SPIT_ROASTING,
         DynamicKink.ORGIES
       ),
@@ -281,6 +334,7 @@ object SampleDataRepository {
       subcultureTags = listOf(SubcultureType.SENSUAL_SWINGER, SubcultureType.ALTERNATIVE),
       verified = true,
       has18PlusVault = true,
+      membershipPlan = PlanType.MONTHLY,
       vaultItems = listOf(
         VaultMediaItem(
           id = "vault_3_1",
@@ -310,7 +364,7 @@ object SampleDataRepository {
       ),
       gradientColors = Pair(0xFF9D4EDD, 0xFFFF0054),
       desireTags = listOf(
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.ORGIES,
         DynamicKink.GANG_BANGING,
         DynamicKink.SPIT_ROASTING,
@@ -319,7 +373,7 @@ object SampleDataRepository {
       preferredGroupActivities = listOf(
         DynamicKink.ORGIES,
         DynamicKink.GANG_BANGING,
-        DynamicKink.FOURSOME
+        DynamicKink.FOURSOME_MFFM
       ),
       targetGendersLookingFor = listOf(
         UserType.COUPLE,
@@ -333,6 +387,7 @@ object SampleDataRepository {
       subcultureTags = listOf(SubcultureType.KINKSTER, SubcultureType.SENSUAL_SWINGER),
       verified = true,
       has18PlusVault = true,
+      membershipPlan = PlanType.LIFETIME_VIP,
       vaultItems = listOf(
         VaultMediaItem(
           id = "vault_4_1",
@@ -364,14 +419,14 @@ object SampleDataRepository {
       desireTags = listOf(
         DynamicKink.THREESOME_MMF,
         DynamicKink.SPIT_ROASTING,
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.ORGIES,
         DynamicKink.GOTH_EMO
       ),
       preferredGroupActivities = listOf(
         DynamicKink.THREESOME_MMF,
         DynamicKink.SPIT_ROASTING,
-        DynamicKink.FOURSOME
+        DynamicKink.FOURSOME_MFFM
       ),
       targetGendersLookingFor = listOf(
         UserType.COUPLE,
@@ -403,14 +458,14 @@ object SampleDataRepository {
       ),
       gradientColors = Pair(0xFF3F37C9, 0xFFF72585),
       desireTags = listOf(
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.THREESOME_MFF,
         DynamicKink.GOTH_EMO,
         DynamicKink.ORGIES,
         DynamicKink.ALT_SUBCULTURE
       ),
       preferredGroupActivities = listOf(
-        DynamicKink.FOURSOME,
+        DynamicKink.FOURSOME_MFFM,
         DynamicKink.THREESOME_MFF,
         DynamicKink.ORGIES
       ),
@@ -532,7 +587,7 @@ object SampleDataRepository {
         DynamicKink.SPIT_ROASTING,
         DynamicKink.THREESOME_MMF,
         DynamicKink.GANG_BANGING,
-        DynamicKink.FOURSOME
+        DynamicKink.FOURSOME_MFFM
       ),
       preferredGroupActivities = listOf(
         DynamicKink.SPIT_ROASTING,
@@ -804,7 +859,7 @@ object SampleDataRepository {
     GroupEvent(
       id = "evt_3",
       title = "Midnight Thunder: Consensual Gangbang Showcase",
-      hostName = "Club Desire Manor",
+      hostName = "REBEL UP Manor",
       kinkType = DynamicKink.GANG_BANGING,
       dateText = "Next Thursday • 11:00 PM",
       locationArea = "Secluded Manor Room 4",
@@ -817,7 +872,7 @@ object SampleDataRepository {
       id = "evt_4",
       title = "Double Chemistry: Foursomes & Couple Swap Social",
       hostName = "Elena & Marcus",
-      kinkType = DynamicKink.FOURSOME,
+      kinkType = DynamicKink.FOURSOME_MFFM,
       dateText = "Sunday • 8:00 PM",
       locationArea = "Riverfront Loft",
       attendeesCount = 6,
@@ -840,11 +895,12 @@ object SampleDataRepository {
       lastMessage = "I would love to be your goth third for the weekend 🖤",
       lastMessageTime = "10m ago",
       unreadCount = 1,
+      isSecureChannel = true,
       messages = listOf(
-        ChatMessage("m1", "Raven Nightshade", "Hey Jordan & Taylor! Stumbled on your profile. Love your vibe.", "10:15 AM", false),
-        ChatMessage("m2", "Jordan & Taylor", "Hey Raven! Your goth aesthetic is stunning. Are you in the city this weekend?", "10:18 AM", true),
-        ChatMessage("m3", "Raven Nightshade", "Yes! I saw you are into threesomes and spit roasting too. Exactly what I crave.", "10:20 AM", false),
-        ChatMessage("m4", "Raven Nightshade", "I would love to be your goth third for the weekend 🖤", "10:25 AM", false)
+        ChatMessage("m1", "Raven Nightshade", "Hey Jordan & Taylor! Stumbled on your profile. Love your vibe.", "10:15 AM", false, isEncrypted = true),
+        ChatMessage("m2", "Jordan & Taylor", "Hey Raven! Your goth aesthetic is stunning. Are you in the city this weekend?", "10:18 AM", true, isEncrypted = true),
+        ChatMessage("m3", "Raven Nightshade", "Yes! I saw you are into threesomes and spit roasting too. Exactly what I crave.", "10:20 AM", false, isEncrypted = true),
+        ChatMessage("m4", "Raven Nightshade", "I would love to be your goth third for the weekend 🖤", "10:25 AM", false, isEncrypted = true)
       )
     ),
     ChatConversation(
@@ -856,10 +912,11 @@ object SampleDataRepository {
       lastMessage = "We sent you a Direct Sex Request for the weekend!",
       lastMessageTime = "2h ago",
       unreadCount = 0,
+      isSecureChannel = true,
       messages = listOf(
-        ChatMessage("m21", "Elena & Marcus", "Hey guys! Elena saw your photos and got super excited.", "12:30 PM", false),
-        ChatMessage("m22", "Jordan & Taylor", "Hey Elena & Marcus! Your loft sounds incredible.", "12:35 PM", true),
-        ChatMessage("m23", "Elena & Marcus", "We sent you a Direct Sex Request for the weekend!", "12:40 PM", false)
+        ChatMessage("m21", "Elena & Marcus", "Hey guys! Elena saw your photos and got super excited.", "12:30 PM", false, isEncrypted = true),
+        ChatMessage("m22", "Jordan & Taylor", "Hey Elena & Marcus! Your loft sounds incredible.", "12:35 PM", true, isEncrypted = true),
+        ChatMessage("m23", "Elena & Marcus", "We sent you a Direct Sex Request for the weekend!", "12:40 PM", false, isEncrypted = true)
       )
     )
   )
@@ -1356,7 +1413,7 @@ object SampleDataRepository {
     }
   }
 
-  fun sendChatMessage(chatId: String, text: String) {
+  fun sendChatMessage(chatId: String, text: String, isSelfDestruct: Boolean = false) {
     _chats.update { currentList ->
       currentList.map { chat ->
         if (chat.id == chatId) {
@@ -1365,14 +1422,76 @@ object SampleDataRepository {
             senderName = _currentUserProfile.value.name,
             text = text,
             time = "Just now",
-            isFromMe = true
+            isFromMe = true,
+            isEncrypted = true,
+            isSelfDestruct = isSelfDestruct
           )
           chat.copy(
             messages = chat.messages + newMsg,
-            lastMessage = text,
+            lastMessage = if (isSelfDestruct) "Encrypted Message" else text,
             lastMessageTime = "Just now"
           )
         } else chat
+      }
+    }
+
+    // Simulate real-time response after 2 seconds
+    val activeChat = _chats.value.find { it.id == chatId }
+    if (activeChat != null) {
+      CoroutineScope(Dispatchers.Default).launch {
+        delay(2000)
+        _chats.update { currentList ->
+          currentList.map { chat ->
+            if (chat.id == chatId) {
+              val reply = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                senderName = chat.targetName,
+                text = "Received on secure channel. 🖤",
+                time = "Just now",
+                isFromMe = false,
+                isEncrypted = true
+              )
+              chat.copy(
+                messages = chat.messages + reply,
+                lastMessage = reply.text,
+                lastMessageTime = "Just now",
+                unreadCount = if (chat.id == chatId) 0 else chat.unreadCount // Reset unread if active
+              )
+            } else chat
+          }
+        }
+      }
+    }
+  }
+
+  fun signInAnonymously() {
+    auth?.signInAnonymously()?.addOnSuccessListener {
+      _firebaseUser.value = it.user
+    }
+  }
+
+  fun loginWithGoogle() {
+    auth?.signInAnonymously()?.addOnSuccessListener {
+      _firebaseUser.value = it.user
+      _membershipState.update { state ->
+        state.copy(isSubscribed = true, userEmail = it.user?.email ?: "google_user@rebelup.com")
+      }
+    }
+  }
+
+  fun signOut() {
+    auth?.signOut()
+    _membershipState.update { 
+      it.copy(isSubscribed = false, userEmail = "anonymous@rebelup.com") 
+    }
+  }
+
+  fun signUp(email: String, password: String = "secure-rebel") {
+    // In a real app, this would use auth.createUserWithEmailAndPassword
+    auth?.createUserWithEmailAndPassword(email, password)?.addOnSuccessListener {
+      _firebaseUser.value = it.user
+      _membershipState.update { state ->
+        state.copy(userEmail = email, isSubscribed = true) 
       }
     }
   }
@@ -1575,6 +1694,100 @@ object SampleDataRepository {
 
   private val _aiCreations = MutableStateFlow<List<AiGeneratedMedia>>(initialAiCreations)
   val aiCreations: StateFlow<List<AiGeneratedMedia>> = _aiCreations.asStateFlow()
+
+  private val initialLiveStreams = listOf(
+    LiveStream(
+      id = "stream_1",
+      broadcasterName = "Mistress Raven",
+      broadcasterType = UserType.SINGLE_FEMALE,
+      title = "Goth Dungeon Fetish Party & Q&A",
+      viewerCount = 1420,
+      priceToJoin = "$5",
+      category = "Fetish / BDSM",
+      previewRes = R.drawable.goth_profile_hero,
+      gradientColors = Pair(0xFF7209B7, 0xFF4361EE),
+      messages = listOf(
+        StreamMessage("m1", "KinkMaster", "Love the vibe!"),
+        StreamMessage("m2", "GothLover", "Sent 10 credits!", isTip = true, tipAmount = "$10"),
+        StreamMessage("m3", "DarkSoul", "When is the next scene starting?")
+      )
+    ),
+    LiveStream(
+      id = "stream_2",
+      broadcasterName = "The Elite Couple",
+      broadcasterType = UserType.COUPLE,
+      title = "Penthouse VIP Afterparty - Interactive Play",
+      viewerCount = 2850,
+      priceToJoin = "$10",
+      category = "Threesome / Group",
+      previewRes = R.drawable.couple_profile_hero,
+      gradientColors = Pair(0xFFFF2A85, 0xFFF72585),
+      messages = listOf(
+        StreamMessage("m4", "VipWatcher", "Incredible penthouse view!"),
+        StreamMessage("m5", "LoverGuy", "Tips $25 for a request!", isTip = true, tipAmount = "$25")
+      )
+    )
+  )
+
+  private val _liveStreams = MutableStateFlow<List<LiveStream>>(initialLiveStreams)
+  val liveStreams: StateFlow<List<LiveStream>> = _liveStreams.asStateFlow()
+
+  val availableGifts = listOf(
+    VirtualGift("g1", "Rose", "🌹", 10, "A simple token of appreciation"),
+    VirtualGift("g2", "Champagne", "🍾", 50, "Celebrate the moment"),
+    VirtualGift("g3", "VIP Crown", "👑", 200, "For the ultimate broadcaster"),
+    VirtualGift("g4", "Luxury Car", "🏎️", 1000, "The ultimate statement gift"),
+    VirtualGift("g5", "Heart", "❤️", 5, "Send some love"),
+    VirtualGift("g6", "Fire", "🔥", 25, "The stream is heating up!")
+  )
+
+  fun sendStreamGift(streamId: String, gift: VirtualGift) {
+    _liveStreams.update { streams ->
+      streams.map { stream ->
+        if (stream.id == streamId) {
+          val newMsg = StreamMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "Me",
+            text = "Sent a ${gift.name}!",
+            gift = gift
+          )
+          stream.copy(messages = stream.messages + newMsg)
+        } else stream
+      }
+    }
+  }
+
+  fun sendStreamTip(streamId: String, amount: String) {
+    _liveStreams.update { streams ->
+      streams.map { stream ->
+        if (stream.id == streamId) {
+          val newMsg = StreamMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "Me",
+            text = "Sent a tip!",
+            isTip = true,
+            tipAmount = amount
+          )
+          stream.copy(messages = stream.messages + newMsg)
+        } else stream
+      }
+    }
+  }
+
+  fun sendStreamMessage(streamId: String, text: String) {
+    _liveStreams.update { streams ->
+      streams.map { stream ->
+        if (stream.id == streamId) {
+          val newMsg = StreamMessage(
+            id = UUID.randomUUID().toString(),
+            senderName = "Me",
+            text = text
+          )
+          stream.copy(messages = stream.messages + newMsg)
+        } else stream
+      }
+    }
+  }
 
   fun generateAdultScene(
     title: String,

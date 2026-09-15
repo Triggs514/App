@@ -26,8 +26,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.SampleDataRepository
+import com.example.util.SubscriptionManager
+import com.example.util.PremiumFeature
 import com.example.model.*
 import com.example.ui.components.MatchingPreferencesDialog
+import com.example.ui.components.MembershipBadge
+import com.example.ui.components.ProfileSkeletonCard
 import com.example.ui.theme.*
 
 @Composable
@@ -39,7 +43,8 @@ fun DiscoverScreen(
   onOpenUpgrade: () -> Unit,
   showFilterDialog: Boolean,
   onDismissFilterDialog: () -> Unit,
-  onChatClicked: (UserProfile) -> Unit = {}
+  onChatClicked: (UserProfile) -> Unit = {},
+  isLoading: Boolean = false
 ) {
   val matchPrefs by SampleDataRepository.matchPreferences.collectAsState()
   var showAlgorithmDialog by remember { mutableStateOf(false) }
@@ -52,7 +57,7 @@ fun DiscoverScreen(
   var likedProfileIds by remember { mutableStateOf(setOf<String>()) }
   var matchToastMessage by remember { mutableStateOf<String?>(null) }
 
-  // Compute match results for each profile (filtering unverified fake profiles and enforcing 18-40 limits)
+  // Compute match results for each profile (filtering unverified fake profiles and enforcing 18-65 limits)
   val profileMatchResults = remember(profiles, matchPrefs, sortByAlgorithmScore, selectedTypeFilter, selectedKinkFilter, selectedSubcultureFilter) {
     val scoredList = profiles.map { prof ->
       SampleDataRepository.calculateMatchScore(prof, matchPrefs)
@@ -103,7 +108,7 @@ fun DiscoverScreen(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "DESIRE MATCH RADAR",
+              text = "REBEL UP MATCH RADAR",
               fontSize = 11.sp,
               fontWeight = FontWeight.Bold,
               letterSpacing = 1.sp,
@@ -167,11 +172,11 @@ fun DiscoverScreen(
                 .background(NeonCyan.copy(alpha = 0.2f))
                 .padding(horizontal = 4.dp, vertical = 1.dp)
             ) {
-              Text("AGES 18–40", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = NeonCyan)
+              Text("AGES 18–65", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = NeonCyan)
             }
           }
           Text(
-            text = "Strict age limits 18–40 • Free unlimited member-to-member chat active for all profiles",
+            text = "Strict age limits 18–65 • Free unlimited member-to-member chat active for all profiles",
             fontSize = 10.sp,
             color = TextSecondary
           )
@@ -477,7 +482,17 @@ fun DiscoverScreen(
     }
 
     // Feed of Scored Matches
-    if (profileMatchResults.isEmpty()) {
+    if (isLoading) {
+      LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 100.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+      ) {
+        items(4) {
+          ProfileSkeletonCard()
+        }
+      }
+    } else if (profileMatchResults.isEmpty()) {
       Box(
         modifier = Modifier
           .fillMaxSize()
@@ -531,14 +546,14 @@ fun DiscoverScreen(
               }
             },
             onSendRequestClicked = {
-              if (membership.canSendSexRequests) {
+              if (SubscriptionManager.canSendSexRequests()) {
                 onSendRequestClicked(profile)
               } else {
                 onOpenUpgrade()
               }
             },
             onVaultClicked = {
-              if (membership.canView18PlusContent) {
+              if (SubscriptionManager.canView18PlusContent()) {
                 onProfileClicked(profile)
               } else {
                 onOpenUpgrade()
@@ -658,7 +673,9 @@ fun ProfileMatchCard(
             }
           }
 
-          Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+          Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            MembershipBadge(plan = profile.membershipPlan)
+
             Box(
               modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
@@ -715,6 +732,15 @@ fun ProfileMatchCard(
               fontWeight = FontWeight.Bold,
               color = Color.White
             )
+            if (profile.verified) {
+              Spacer(modifier = Modifier.width(6.dp))
+              Icon(
+                Icons.Default.Verified,
+                contentDescription = "Verified",
+                tint = GoldVip,
+                modifier = Modifier.size(18.dp)
+              )
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
               text = profile.age,

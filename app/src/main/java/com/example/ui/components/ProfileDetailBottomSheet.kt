@@ -27,8 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.SampleDataRepository
+import com.example.util.SubscriptionManager
+import com.example.util.PremiumFeature
 import com.example.model.DynamicKink
 import com.example.model.UserProfile
+import com.example.ui.components.MembershipBadge
 import com.example.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -126,8 +129,11 @@ fun ProfileDetailBottomSheet(
           modifier = Modifier
             .align(Alignment.TopEnd)
             .padding(14.dp),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalAlignment = Alignment.CenterVertically
         ) {
+          MembershipBadge(plan = profile.membershipPlan)
+
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(12.dp))
@@ -359,6 +365,11 @@ fun ProfileDetailBottomSheet(
         Spacer(modifier = Modifier.height(6.dp))
         FlowRowDesireBadges(profile.desireTags)
 
+        Spacer(modifier = Modifier.height(14.dp))
+        
+        // LIFESTYLE GALLERY
+        LifestyleGallery(profile.lifestylePhotos)
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // About / Bio
@@ -467,14 +478,14 @@ fun ProfileDetailBottomSheet(
                 color = GoldVip
               )
               Text(
-                text = if (membership.canView18PlusContent) "VIP Access Active" else "Premium Upgrade Required ($15)",
+                text = if (SubscriptionManager.canView18PlusContent()) "VIP Access Active" else SubscriptionManager.getRestrictionReason(PremiumFeature.VAULT_18_PLUS),
                 fontSize = 10.sp,
-                color = if (membership.canView18PlusContent) SuccessGreen else TextMuted
+                color = if (SubscriptionManager.canView18PlusContent()) SuccessGreen else TextMuted
               )
             }
           }
 
-          if (!membership.canView18PlusContent) {
+          if (!SubscriptionManager.canView18PlusContent()) {
             Button(
               onClick = onOpenUpgrade,
               colors = ButtonDefaults.buttonColors(containerColor = GoldVip),
@@ -495,7 +506,7 @@ fun ProfileDetailBottomSheet(
             for (item in profile.vaultItems) {
               VaultPreviewCard(
                 item = item,
-                canView = membership.canView18PlusContent,
+                canView = SubscriptionManager.canView18PlusContent(),
                 onUnlockClicked = onOpenUpgrade
               )
             }
@@ -506,7 +517,13 @@ fun ProfileDetailBottomSheet(
 
         // Action Buttons: Send Direct Sex Request & Send Message
         Button(
-          onClick = { onSendRequestClicked(profile) },
+          onClick = {
+            if (SubscriptionManager.canSendSexRequests()) {
+              onSendRequestClicked(profile)
+            } else {
+              onOpenUpgrade()
+            }
+          },
           modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
@@ -527,7 +544,7 @@ fun ProfileDetailBottomSheet(
               Icon(Icons.Default.Send, contentDescription = null, tint = Color.White)
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                text = "SEND DIRECT SEX REQUEST",
+                text = if (SubscriptionManager.canSendSexRequests()) "SEND DIRECT SEX REQUEST" else "UNLOCK SEX REQUESTS ($15)",
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 color = Color.White,
@@ -691,6 +708,88 @@ fun VaultPreviewCard(
           }
           Spacer(modifier = Modifier.height(4.dp))
           Text(item.durationOrCount, fontSize = 10.sp, color = NeonCyan)
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun LifestyleGallery(photos: List<com.example.model.PhotoItem>) {
+  if (photos.isEmpty()) return
+
+  Column(modifier = Modifier.padding(vertical = 12.dp)) {
+    Text(
+      text = "CURATED LIFESTYLE GALLERY",
+      fontSize = 11.sp,
+      fontWeight = FontWeight.Bold,
+      letterSpacing = 1.sp,
+      color = TextSecondary,
+      modifier = Modifier.padding(horizontal = 20.dp)
+    )
+    Spacer(modifier = Modifier.height(10.dp))
+    LazyRow(
+      contentPadding = PaddingValues(horizontal = 20.dp),
+      horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+      items(photos) { photo ->
+        var isUnblurred by remember { mutableStateOf(false) }
+        Box(
+          modifier = Modifier
+            .width(150.dp)
+            .height(200.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(DesireCardSurface)
+            .clickable { isUnblurred = !isUnblurred }
+        ) {
+          if (photo.drawableRes != null) {
+            Image(
+              painter = painterResource(id = photo.drawableRes),
+              contentDescription = photo.caption,
+              contentScale = ContentScale.Crop,
+              modifier = Modifier
+                .fillMaxSize()
+                .blur(if (isUnblurred) 0.dp else 30.dp)
+            )
+          }
+
+          if (!isUnblurred) {
+            Box(
+              modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.2f)),
+              contentAlignment = Alignment.Center
+            ) {
+              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                  Icons.Default.VisibilityOff,
+                  contentDescription = null,
+                  tint = Color.White.copy(alpha = 0.8f),
+                  modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                  text = "TAP TO REVEAL",
+                  color = Color.White,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Black,
+                  letterSpacing = 0.5.sp
+                )
+              }
+            }
+          } else {
+            // Unblurred indicator
+            Box(
+              modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(8.dp)
+                .size(24.dp)
+                .background(Color.Black.copy(alpha = 0.6f), CircleShape),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(Icons.Default.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+            }
+          }
         }
       }
     }

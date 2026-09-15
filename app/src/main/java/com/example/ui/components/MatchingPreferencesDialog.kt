@@ -52,13 +52,22 @@ fun MatchingPreferencesDialog(
   var onlyDiscreet by remember { mutableStateOf(currentPrefs.onlyDiscreet) }
   var onlyRealVerifiedMembers by remember { mutableStateOf(currentPrefs.onlyRealVerifiedMembers) }
   var minAge by remember { mutableStateOf(currentPrefs.minAge.toFloat().coerceAtLeast(18f)) }
-  var maxAge by remember { mutableStateOf(currentPrefs.maxAge.toFloat().coerceAtMost(40f)) }
+  var maxAge by remember { mutableStateOf(currentPrefs.maxAge.toFloat().coerceAtMost(65f)) }
   var maxDistance by remember { mutableStateOf(currentPrefs.maxDistanceMiles.toFloat()) }
 
   val relationshipDynamics = listOf(
     DynamicKink.THREESOME_MFF,
+    DynamicKink.THREESOME_FFF,
+    DynamicKink.THREESOME_MMM,
     DynamicKink.THREESOME_MMF,
-    DynamicKink.FOURSOME,
+    DynamicKink.FOURSOME_MFFM,
+    DynamicKink.FOURSOME_MMFF,
+    DynamicKink.FOURSOME_MMMF,
+    DynamicKink.FOURSOME_FFFM,
+    DynamicKink.FOURSOME_MMMM,
+    DynamicKink.FOURSOME_FFFF,
+    DynamicKink.GROUP_SWAP,
+    DynamicKink.LGBTQ_COMMUNITY,
     DynamicKink.ORGIES,
     DynamicKink.HERMAPHRODITE_INTERSEX_DATING,
     DynamicKink.BISEXUAL_PLAY
@@ -607,7 +616,7 @@ fun MatchingPreferencesDialog(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 8. AGE LIMITS: STRICT 18 TO 40 EXCLUSIVE
+        // 8. AGE LIMITS: 18 TO 65
         Card(
           modifier = Modifier.fillMaxWidth(),
           shape = RoundedCornerShape(14.dp),
@@ -622,7 +631,7 @@ fun MatchingPreferencesDialog(
             ) {
               Column {
                 Text(
-                  text = "AGE RESTRICTION: 18 TO 40 ONLY",
+                  text = "AGE RESTRICTION: 18 TO 65",
                   fontSize = 11.sp,
                   fontWeight = FontWeight.Bold,
                   letterSpacing = 0.5.sp,
@@ -649,12 +658,12 @@ fun MatchingPreferencesDialog(
               horizontalArrangement = Arrangement.SpaceBetween
             ) {
               Text("Min: 18", fontSize = 10.sp, color = TextMuted)
-              Text("Max Limit: 40", fontSize = 10.sp, color = TextMuted)
+              Text("Max Limit: 65", fontSize = 10.sp, color = TextMuted)
             }
             Slider(
               value = maxAge,
-              onValueChange = { maxAge = it.coerceIn(21f, 40f) },
-              valueRange = 21f..40f,
+              onValueChange = { maxAge = it.coerceIn(21f, 65f) },
+              valueRange = 21f..65f,
               colors = SliderDefaults.colors(
                 thumbColor = NeonMagenta,
                 activeTrackColor = NeonMagenta,
