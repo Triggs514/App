@@ -1,0 +1,6 @@
+{
+  "name": "Club Desire",
+  "description": "Alternative and polyamorous dating app for couples and singles exploring threesomes, group dynamics, goth/emo aesthetics, intimate requests, and membership tiers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
